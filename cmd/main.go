@@ -28,15 +28,14 @@ func main() {
 	externalIP := strings.Trim(getPublicAddr(), "\n")
 	zoneID := getZoneID(api, DOMAIN)
 	token := verifyToken(ctx, api)
-	cfIP, recordID := getDNSRecordIP(ctx, api)
+	cfIP, recordID := getDNSRecordIP(ctx, api, DOMAIN)
 
 	if token == "active" {
 		if cfIP != externalIP {
 			fmt.Printf("IP does not match DNS record. Cloudflare IP is %s, expected %s\n", cfIP, externalIP)
 			fmt.Println("Now updating DNS record...")
-			fmt.Printf("This is the zoneID: %s\n This is the RecordID: %s\n", zoneID, recordID)
 
-			// updateDNSRecord(ctx, api, zoneID, recordID, externalIP)
+			updateDNSRecord(ctx, api, zoneID, recordID, externalIP)
 
 			fmt.Println("Updated record")
 		} else {
@@ -79,12 +78,12 @@ func getZoneID(api *cloudflare.API, domain string) string {
 	return zoneID
 }
 
-func getDNSRecordIP(ctx context.Context, api *cloudflare.API) (string, string) {
+func getDNSRecordIP(ctx context.Context, api *cloudflare.API, domain string) (string, string) {
 
-	zoneID := getZoneID(api, DOMAIN)
+	zoneID := getZoneID(api, domain)
 
 	param := cloudflare.ListDNSRecordsParams{
-		Name: DOMAIN,
+		Name: domain,
 	}
 
 	records, _, err := api.ListDNSRecords(ctx, cloudflare.ZoneIdentifier(zoneID), param)
@@ -96,7 +95,7 @@ func getDNSRecordIP(ctx context.Context, api *cloudflare.API) (string, string) {
 	var recID string
 
 	for _, r := range records {
-		if r.Name == DOMAIN {
+		if r.Name == domain {
 			rec = r.Content
 			recID = r.ID
 		}
