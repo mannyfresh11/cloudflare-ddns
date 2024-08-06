@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mannyfres11/cfupdater/utils/api"
-	"github.com/mannyfres11/cfupdater/utils/network"
+	"github.com/mannyfresh11/cloudflare-ddns/utils/api"
+	"github.com/mannyfresh11/cloudflare-ddns/utils/network"
 )
 
 var DOMAIN = os.Getenv("DOMAIN")

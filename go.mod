@@ -1,4 +1,4 @@
-module mannyfresh11/cfupdater
+module mannyfresh11/cloudflare-ddns
 
 go 1.22.1
 
