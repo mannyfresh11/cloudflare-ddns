@@ -13,3 +13,7 @@ type CFSetter interface {
 
 	UpdateDNSRecord(ctx context.Context, domain, zoneID, externalIP string)
 }
+
+type Auth interface {
+	New(ctx context.Context) CFSetter
+}

@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
-	"github.com/cloudflare/cloudflare-go"
+	"github.com/mannyfres11/cfupdater/utils/api"
+	"github.com/mannyfres11/cfupdater/utils/network"
 )
 
 var DOMAIN = os.Getenv("DOMAIN")
@@ -17,26 +17,23 @@ func main() {
 
 	ctx := context.Background()
 
-	api, err := cloudflare.NewWithAPIToken(API_TOKEN)
-	if err != nil {
-		log.Fatalf("Failed to get api: %v", err)
-	}
+	externalIP := strings.Trim(network.Netter.GetPublicIP(), "\n")
 
-	externalIP := strings.Trim(getPublicAddr(), "\n")
-	zoneID := GetZoneID(api, DOMAIN)
-	token := verifyToken(ctx, api)
-	cfIP, recordID := getDNSRecordIP(ctx, api, DOMAIN)
+	cfIP, recordID := api.CFSetter.GetDNSRecords(ctx, DOMAIN)
+
+	zoneID := api.CFSetter.GetZoneID(DOMAIN)
+	token := api.CFSetter.VerifyToken(ctx)
 
 	if token == "active" {
 		if cfIP != externalIP {
 			fmt.Printf("IP does not match DNS record. Cloudflare IP is %s, expected %s\n", cfIP, externalIP)
 			fmt.Println("Now updating DNS record...")
 
-			updateDNSRecord(ctx, api, zoneID, recordID, externalIP)
+			api.CFSetter.UpdateDNSRecord(ctx, zoneID, recordID, externalIP)
 
 			fmt.Println("Updated record")
 		} else {
-			fmt.Printf("IP matches DNS record. Cloudflare IP is %s, expected %s\n", cfIP, externalIP)
+			fmt.Printf("IP matches DNS record. Cloudflare IP f%s, expected %s\n", cfIP, externalIP)
 		}
 	} else {
 		fmt.Println("Token not active.")

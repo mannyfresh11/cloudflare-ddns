@@ -8,11 +8,28 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 )
 
-type Cloudflare struct {
+type CFAuth struct {
+	Token string
+}
+
+func (a CFAuth) New(_ context.Context) CloudflareAPI {
+	api, err := cloudflare.NewWithAPIToken(a.Token)
+	if err != nil {
+		log.Fatalf("Failed to get api: %v", err)
+	}
+
+	c := CloudflareAPI{
+		api: api,
+	}
+
+	return c
+}
+
+type CloudflareAPI struct {
 	api *cloudflare.API
 }
 
-func (c Cloudflare) GetZoneID(domain string) string {
+func (c CloudflareAPI) GetZoneID(domain string) string {
 
 	zoneID, err := c.api.ZoneIDByName(domain)
 	if err != nil {
@@ -22,7 +39,7 @@ func (c Cloudflare) GetZoneID(domain string) string {
 	return zoneID
 }
 
-func (c Cloudflare) VerifyToken(ctx context.Context) string {
+func (c CloudflareAPI) VerifyToken(ctx context.Context) string {
 
 	token, err := c.api.VerifyAPIToken(ctx)
 	if err != nil {
@@ -32,7 +49,7 @@ func (c Cloudflare) VerifyToken(ctx context.Context) string {
 	return token.Status
 }
 
-func (c Cloudflare) GetDNSRecordIP(ctx context.Context, domain string) (string, string) {
+func (c CloudflareAPI) GetDNSRecordIP(ctx context.Context, domain string) (string, string) {
 
 	zoneID := c.GetZoneID(domain)
 
@@ -58,7 +75,7 @@ func (c Cloudflare) GetDNSRecordIP(ctx context.Context, domain string) (string, 
 	return rec, recID
 }
 
-func (c Cloudflare) UpdateDNSRecord(ctx context.Context, zoneID, externalIP, recordID string) {
+func (c CloudflareAPI) UpdateDNSRecord(ctx context.Context, zoneID, externalIP, recordID string) {
 
 	params := cloudflare.UpdateDNSRecordParams{
 		ID:      recordID,
