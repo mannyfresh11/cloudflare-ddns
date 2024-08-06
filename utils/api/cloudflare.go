@@ -34,7 +34,7 @@ func (c Cloudflare) VerifyToken(ctx context.Context) string {
 
 func (c Cloudflare) GetDNSRecordIP(ctx context.Context, domain string) (string, string) {
 
-	zoneID := GetZoneID(c.api, domain)
+	zoneID := c.GetZoneID(domain)
 
 	param := cloudflare.ListDNSRecordsParams{
 		Name: domain,
