@@ -15,5 +15,5 @@ type CFSetter interface {
 }
 
 type Auth interface {
-	New(ctx context.Context) CFSetter
+	New(ctx context.Context) CloudflareAPI
 }

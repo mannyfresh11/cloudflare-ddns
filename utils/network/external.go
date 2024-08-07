@@ -5,9 +5,10 @@ import (
 	"errors"
 	"log"
 	"os/exec"
+	"strings"
 )
 
-func getPublicAddr() string {
+func GetPublicIP() string {
 
 	var buffer bytes.Buffer
 
@@ -26,5 +27,7 @@ func getPublicAddr() string {
 		log.Fatalf("Error runing cmd: %v\n", err)
 	}
 
-	return buffer.String()
+	ip := strings.Trim(buffer.String(), "\n")
+
+	return ip
 }

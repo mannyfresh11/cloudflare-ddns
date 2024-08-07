@@ -1,4 +1,4 @@
-module mannyfresh11/cloudflare-ddns
+module github.com/mannyfresh11/cloudflare-ddns
 
 go 1.22.1
 
