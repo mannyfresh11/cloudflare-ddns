@@ -9,8 +9,10 @@ import (
 	"github.com/mannyfresh11/cloudflare-ddns/utils/network"
 )
 
-var DOMAIN = os.Getenv("DOMAIN")
-var API_TOKEN = os.Getenv("CF_API_TOKEN")
+var (
+	DOMAIN    = os.Getenv("DOMAIN")
+	API_TOKEN = os.Getenv("CF_API_TOKEN")
+)
 
 func InitStart(ctx context.Context) api.CloudflareAPI {
 	auth := api.CFAuth{
@@ -40,7 +42,7 @@ func main() {
 			fmt.Println("Now updating DNS record...")
 			fmt.Printf("This is the record ID: %s and this is the zoneID: %s", recordID, zoneID)
 
-			a.UpdateDNSRecord(ctx, zoneID, recordID, externalIP)
+			// a.UpdateDNSRecord(ctx, zoneID, recordID, externalIP)
 
 			fmt.Println("Updated record")
 		} else {
