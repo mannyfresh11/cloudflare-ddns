@@ -35,12 +35,12 @@ func main() {
 
 	ctx := context.Background()
 
+	interval := checkEnv()
+
 	cf, err := auth(ctx)
 	if err != nil {
 		panic("Could not authenticate to CF. Check API token.")
 	}
-
-	interval := checkEnv()
 
 	ticker := time.NewTicker(time.Minute * time.Duration(interval))
 
