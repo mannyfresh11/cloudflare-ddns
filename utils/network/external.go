@@ -1,61 +1,37 @@
 package network
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 )
 
-// func GetPublicIP() string {
-//
-// 	var buffer bytes.Buffer
-//
-// 	defer buffer.Reset()
-//
-// 	command := `curl -sf4 https://one.one.one.one/cdn-cgi/trace | grep 'ip' | tr -d 'ip='`
-//
-// 	cmd := exec.Command("bash", "-c", command)
-// 	if errors.Is(cmd.Err, exec.ErrDot) {
-// 		cmd.Err = nil
-// 	}
-//
-// 	cmd.Stdout = &buffer
-//
-// 	if err := cmd.Run(); err != nil {
-// 		log.Fatalf("Error runing cmd: %v\n", err)
-// 	}
-//
-// 	ip := strings.Trim(buffer.String(), "\n")
-//
-// 	return ip
-// }
-
-func GetPublicIP() string {
+func GetPublicIP() (string, error) {
 
 	url := "https://one.one.one.one/cdn-cgi/trace"
 
 	res, err := http.Get(url)
 	if err != nil {
-		fmt.Printf("Cannot reach url: %s", url)
+		return "", err
 	}
 
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Printf("Cannot read response")
+		return "", err
 	}
 
-	ipS := string(body)
+	bodyStripped := strings.Split(string(body), "\n")
 
-	ip := strings.Split(ipS, "\n")
-
-	for _, v := range ip {
+	for _, v := range bodyStripped {
 		if strings.HasPrefix(v, "ip=") {
-			return strings.TrimPrefix(v, "ip=")
+
+			ipaddr := strings.TrimPrefix(v, "ip=")
+
+			return ipaddr, nil
 		}
 	}
 
-	return ""
+	return "", nil
 }

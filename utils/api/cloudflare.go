@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/cloudflare/cloudflare-go"
 )
@@ -12,17 +11,18 @@ type CFAuth struct {
 	Token string
 }
 
-func (a CFAuth) New(_ context.Context) CloudflareAPI {
+func (a CFAuth) New(_ context.Context) (CloudflareAPI, error) {
+
 	api, err := cloudflare.NewWithAPIToken(a.Token)
 	if err != nil {
-		log.Fatalf("Failed to get api: %v", err)
+		return CloudflareAPI{}, fmt.Errorf("Failed to get api: %v", err)
 	}
 
 	c := CloudflareAPI{
 		api: api,
 	}
 
-	return c
+	return c, nil
 }
 
 type CloudflareAPI struct {
@@ -46,10 +46,17 @@ func (c CloudflareAPI) VerifyToken(ctx context.Context) string {
 		fmt.Printf("Error verifying token: %v\n", err)
 	}
 
-	return token.Status
+	switch token.Status {
+	case "active":
+		return token.Status
+	case "disabled", "expired":
+		return fmt.Sprintf("Your token is either disabled or expired.")
+	default:
+		return fmt.Sprintf("This is the token status: %s", token.Status)
+	}
 }
 
-func (c CloudflareAPI) GetDNSRecordIP(ctx context.Context, domain string) (string, string) {
+func (c CloudflareAPI) GetDNSRecordIP(ctx context.Context, domain string) (string, string, error) {
 
 	zoneID := c.GetZoneID(domain)
 
@@ -59,7 +66,8 @@ func (c CloudflareAPI) GetDNSRecordIP(ctx context.Context, domain string) (strin
 
 	records, _, err := c.api.ListDNSRecords(ctx, cloudflare.ZoneIdentifier(zoneID), param)
 	if err != nil {
-		log.Fatalf("Error getting DNS record IP: %v", err)
+		return "", "", fmt.Errorf("Error getting DNS record IP: %v", err)
+
 	}
 
 	var rec string
@@ -72,10 +80,10 @@ func (c CloudflareAPI) GetDNSRecordIP(ctx context.Context, domain string) (strin
 		}
 	}
 
-	return rec, recID
+	return rec, recID, nil
 }
 
-func (c CloudflareAPI) UpdateDNSRecord(ctx context.Context, zoneID, externalIP, recordID string) {
+func (c CloudflareAPI) UpdateDNSRecord(ctx context.Context, zoneID, externalIP, recordID string) error {
 
 	params := cloudflare.UpdateDNSRecordParams{
 		ID:      recordID,
@@ -83,7 +91,10 @@ func (c CloudflareAPI) UpdateDNSRecord(ctx context.Context, zoneID, externalIP, 
 	}
 
 	if _, err := c.api.UpdateDNSRecord(ctx, cloudflare.ZoneIdentifier(zoneID), params); err != nil {
-
-		log.Fatalf("Error updating DNS Record: %v", err)
+		return fmt.Errorf("Error updating DNS Record: %v", err)
 	}
+
+	SendHook("Clodflare IP has changed.")
+
+	return nil
 }

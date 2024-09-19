@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/mannyfresh11/cloudflare-ddns/utils/api"
 	"github.com/mannyfresh11/cloudflare-ddns/utils/network"
@@ -12,43 +14,77 @@ import (
 var (
 	DOMAIN    = os.Getenv("DOMAIN")
 	API_TOKEN = os.Getenv("CF_API_TOKEN")
+	INTERVAL  = os.Getenv("INTERVAL")
 )
 
-func InitStart(ctx context.Context) api.CloudflareAPI {
-	auth := api.CFAuth{
+func auth(ctx context.Context) (api.CloudflareAPI, error) {
+	token := api.CFAuth{
 		Token: API_TOKEN,
 	}
 
-	a := api.Auth.New(auth, ctx)
+	a, err := api.CFAuth.New(token, ctx)
+	if err != nil {
+		return api.CloudflareAPI{}, err
+	}
 
-	return a
+	return a, nil
 }
 
 func main() {
 
 	ctx := context.Background()
 
-	a := InitStart(ctx)
+	cf, err := auth(ctx)
+	if err != nil {
+		fmt.Println("Could not authenticate to CF. Check API token.")
+	}
 
-	externalIP := network.GetPublicIP()
+	interval, err := strconv.Atoi(INTERVAL)
+	if err != nil {
+		interval = 60
+	}
 
-	cfIP, recordID := a.GetDNSRecordIP(ctx, DOMAIN)
-	zoneID := a.GetZoneID(DOMAIN)
-	token := a.VerifyToken(ctx)
+	ticker := time.NewTicker(time.Minute * time.Duration(interval))
 
-	if token == "active" {
-		if cfIP != externalIP {
-			fmt.Printf("IP does not match DNS record. Cloudflare IP is %s, expected %s\n", cfIP, externalIP)
-			fmt.Println("Now updating DNS record...")
-			fmt.Printf("This is the record ID: %s and this is the zoneID: %s", recordID, zoneID)
+	Run := func() {
 
-			// a.UpdateDNSRecord(ctx, zoneID, recordID, externalIP)
-
-			fmt.Println("Updated record")
-		} else {
-			fmt.Printf("IP matches DNS record. Cloudflare IP %s, expected %s\n", cfIP, externalIP)
+		externalIP, err := network.GetPublicIP()
+		if err != nil {
+			fmt.Println("Could not get a public IP.")
 		}
-	} else {
-		fmt.Println("Token not active.")
+
+		cfIP, recordID, err := cf.GetDNSRecordIP(ctx, DOMAIN)
+		if err != nil {
+			fmt.Println("Could not get a Cloudflare IP from DNS record.")
+		}
+		zoneID := cf.GetZoneID(DOMAIN)
+		token := cf.VerifyToken(ctx)
+
+		if token == "active" {
+			if cfIP != externalIP {
+				fmt.Printf("IP does not match DNS record. Cloudflare IP is %s, expected %s\n", cfIP, externalIP)
+
+				fmt.Println("Now updating DNS record...")
+				err = cf.UpdateDNSRecord(ctx, zoneID, recordID, externalIP)
+				if err != nil {
+					fmt.Println("Could not update DNS record.")
+				}
+
+				fmt.Println("Record updated!")
+			} else {
+				fmt.Printf("IP matches DNS record. Cloudflare IP: %s - Expected IP: %s\n", cfIP, externalIP)
+			}
+		} else {
+			fmt.Println("Token not active.")
+		}
+	}
+
+	Run()
+
+	for {
+		select {
+		case <-ticker.C:
+			Run()
+		}
 	}
 }
