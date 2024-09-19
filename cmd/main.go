@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -39,10 +40,7 @@ func main() {
 		panic("Could not authenticate to CF. Check API token.")
 	}
 
-	interval, err := strconv.Atoi(INTERVAL)
-	if err != nil {
-		interval = 60
-	}
+	interval := checkEnv()
 
 	ticker := time.NewTicker(time.Minute * time.Duration(interval))
 
@@ -87,4 +85,23 @@ func main() {
 			Run()
 		}
 	}
+}
+
+func checkEnv() int {
+
+	if DOMAIN == "" {
+		log.Fatal("Domain empty. Please provide value.")
+	}
+
+	if API_TOKEN == "" {
+		log.Fatal("API token empty. Please provide value.")
+	}
+
+	interval, err := strconv.Atoi(INTERVAL)
+	if err != nil {
+		interval = 60
+	}
+
+	return interval
+
 }
