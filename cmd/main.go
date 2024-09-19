@@ -36,7 +36,7 @@ func main() {
 
 	cf, err := auth(ctx)
 	if err != nil {
-		fmt.Println("Could not authenticate to CF. Check API token.")
+		panic("Could not authenticate to CF. Check API token.")
 	}
 
 	interval, err := strconv.Atoi(INTERVAL)

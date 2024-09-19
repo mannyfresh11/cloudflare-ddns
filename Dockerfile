@@ -1,12 +1,18 @@
 FROM golang:1.23.1-alpine3.20
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download && go mod veriy
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -v -o /usr/local/bin/app ./...
+RUN echo "Listing files after copying source code:" && ls -al /app
 
-CMD ["./usr/local/bin/app"]
+RUN go build cmd/main.go 
+
+RUN echo "Listing files after copying source code:" && ls -al /app
+
+CMD ["./main"]
