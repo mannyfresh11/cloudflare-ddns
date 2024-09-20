@@ -1,1 +1,11 @@
-main
+# ignore everything
+*
+
+# include what we need
+!go.mod
+!go.sum
+!cmd
+!utils
+
+# include files for fuzzing
+!test

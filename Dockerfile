@@ -1,6 +1,6 @@
-FROM golang:1.23.1-alpine3.20
+FROM golang:1.23.1-alpine3.20 AS builder
 
-WORKDIR /app
+WORKDIR /tmp/cf
 
 COPY go.mod .
 COPY go.sum .
@@ -11,4 +11,8 @@ COPY . .
 
 RUN go build cmd/cfupdater.go 
 
-CMD ["./cfupdater"]
+FROM alpine:3.20
+
+COPY --from=builder /tmp/cf /app
+
+CMD ["./app/cfupdater"]
