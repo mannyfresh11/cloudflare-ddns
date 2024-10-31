@@ -11,18 +11,16 @@ type CFAuth struct {
 	Token string
 }
 
-func (a CFAuth) New(_ context.Context) (CloudflareAPI, error) {
+func NewCFAuth(token string) (CloudflareAPI, error) {
 
-	api, err := cloudflare.NewWithAPIToken(a.Token)
+	api, err := cloudflare.NewWithAPIToken(token)
 	if err != nil {
 		return CloudflareAPI{}, fmt.Errorf("Failed to get api: %v", err)
 	}
 
-	c := CloudflareAPI{
+	return CloudflareAPI{
 		api: api,
-	}
-
-	return c, nil
+	}, nil
 }
 
 type CloudflareAPI struct {
@@ -67,20 +65,15 @@ func (c CloudflareAPI) GetDNSRecordIP(ctx context.Context, domain string) (strin
 	records, _, err := c.api.ListDNSRecords(ctx, cloudflare.ZoneIdentifier(zoneID), param)
 	if err != nil {
 		return "", "", fmt.Errorf("Error getting DNS record IP: %v", err)
-
 	}
-
-	var rec string
-	var recID string
 
 	for _, r := range records {
 		if r.Name == domain {
-			rec = r.Content
-			recID = r.ID
+			return r.Content, r.ID, nil
 		}
 	}
 
-	return rec, recID, nil
+	return "", "", fmt.Errorf("No matching DNS record found in domain: %s", domain)
 }
 
 func (c CloudflareAPI) UpdateDNSRecord(ctx context.Context, zoneID, externalIP, recordID string) error {
